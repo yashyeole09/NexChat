@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { Client, IMessage } from '@stomp/stompjs';
+import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
@@ -10,59 +10,43 @@ export function useWebSocket() {
   const { accessToken, isAuthenticated } = useAuthStore();
   const { addMessage, updateMessage, deleteMessage, setTyping, rooms } = useChatStore();
 
-  const connect = useCallback(() => {
-    if (!accessToken || !isAuthenticated) return;
-
-    const client = new Client({
-      webSocketFactory: () => new SockJS('/ws'),
-      connectHeaders: { Authorization: `Bearer ${accessToken}` },
-      reconnectDelay: 3000,
-      heartbeatIncoming: 10000,
-      heartbeatOutgoing: 10000,
-
-      onConnect: () => {
-        console.log('WebSocket connected');
-        // Subscribe to all user rooms
-        rooms.forEach((room) => subscribeToRoom(client, room.id));
-      },
-
-      onDisconnect: () => console.log('WebSocket disconnected'),
-      onStompError: (frame) => console.error('STOMP error:', frame),
-    });
-
-    client.activate();
-    clientRef.current = client;
-
-    return () => client.deactivate();
-  }, [accessToken, isAuthenticated]);
-
   const subscribeToRoom = useCallback((client: Client, roomId: string) => {
-    // New messages
-    client.subscribe(`/topic/room/${roomId}`, (msg: IMessage) => {
+    client.subscribe(`/topic/room/${roomId}`, (msg) => {
       const message: Message = JSON.parse(msg.body);
       addMessage(message);
     });
-
-    // Edits
-    client.subscribe(`/topic/room/${roomId}/edits`, (msg: IMessage) => {
+    client.subscribe(`/topic/room/${roomId}/edits`, (msg) => {
       updateMessage(JSON.parse(msg.body));
     });
-
-    // Deletes
-    client.subscribe(`/topic/room/${roomId}/deletes`, (msg: IMessage) => {
+    client.subscribe(`/topic/room/${roomId}/deletes`, (msg) => {
       deleteMessage(roomId, msg.body.replace(/"/g, ''));
     });
-
-    // Typing indicators
-    client.subscribe(`/topic/room/${roomId}/typing`, (msg: IMessage) => {
+    client.subscribe(`/topic/room/${roomId}/typing`, (msg) => {
       const event: TypingEvent = JSON.parse(msg.body);
       setTyping(roomId, event.username, event.typing === 'true');
     });
   }, [addMessage, updateMessage, deleteMessage, setTyping]);
 
+  const connect = useCallback(() => {
+    if (!accessToken || !isAuthenticated) return undefined;
+    const client = new Client({
+      webSocketFactory: () => new SockJS('/ws') as any,
+      connectHeaders: { Authorization: `Bearer ${accessToken}` },
+      reconnectDelay: 3000,
+      onConnect: () => {
+        rooms.forEach((room) => subscribeToRoom(client, room.id));
+      },
+      onDisconnect: () => console.log('WebSocket disconnected'),
+      onStompError: (frame) => console.error('STOMP error:', frame),
+    });
+    client.activate();
+    clientRef.current = client;
+    return () => { client.deactivate(); };
+  }, [accessToken, isAuthenticated, rooms, subscribeToRoom]);
+
   useEffect(() => {
     const cleanup = connect();
-    return () => { cleanup?.(); };
+    return () => { if (cleanup) cleanup(); };
   }, [connect]);
 
   const sendTyping = useCallback((roomId: string, typing: boolean) => {
