@@ -52,3 +52,4 @@ export default function ChatHeader({ room }: Props) {
     </div>
   );
 }
+
