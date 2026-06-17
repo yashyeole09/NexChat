@@ -5,6 +5,19 @@ import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import type { Message, TypingEvent } from '../types';
 
+const getWsUrl = () => {
+  const wsUrl = import.meta.env.VITE_WS_URL;
+  if (wsUrl) return wsUrl;
+  // Fallback: derive from current window location for production
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    return `${protocol}//${window.location.host}`;
+  }
+  return 'http://localhost:8080';
+};
+
+const WS_URL = getWsUrl();
+
 export function useWebSocket() {
   const clientRef = useRef<Client | null>(null);
   const { accessToken, isAuthenticated } = useAuthStore();
@@ -27,18 +40,18 @@ export function useWebSocket() {
     });
   }, [addMessage, updateMessage, deleteMessage, setTyping]);
 
-  const connect = useCallback(() => {
+  const connect = useCallback((): (() => void) | undefined => {
     if (!accessToken || !isAuthenticated) return undefined;
+
     const client = new Client({
-      webSocketFactory: () => new SockJS('/ws') as any,
+      webSocketFactory: () => new SockJS(`${WS_URL}/ws`),
       connectHeaders: { Authorization: `Bearer ${accessToken}` },
       reconnectDelay: 3000,
       onConnect: () => {
         rooms.forEach((room) => subscribeToRoom(client, room.id));
       },
-      onDisconnect: () => console.log('WebSocket disconnected'),
-      onStompError: (frame) => console.error('STOMP error:', frame),
     });
+
     client.activate();
     clientRef.current = client;
     return () => { client.deactivate(); };
@@ -57,10 +70,11 @@ export function useWebSocket() {
   }, []);
 
   const subscribeRoom = useCallback((roomId: string) => {
-    if (clientRef.current?.connected) {
-      subscribeToRoom(clientRef.current, roomId);
-    }
+   const client = clientRef.current;
+if (client?.connected) {
+  subscribeToRoom(client, roomId);  // TS is happy now ✓
+}
   }, [subscribeToRoom]);
 
-  return { client: clientRef.current, sendTyping, subscribeRoom };
+  return { sendTyping, subscribeRoom };
 }
