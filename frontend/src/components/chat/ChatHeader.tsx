@@ -12,7 +12,7 @@ export default function ChatHeader({ room }: Props) {
 
   const otherUser =
     room.type === 'DIRECT'
-      ? room.members?.find((m) => m.id !== user?.id) ?? undefined
+      ? room.members?.find((m) => m.id !== user?.id) ?? undefined ?? undefined
       : undefined;
 
   const statusLabel = otherUser
@@ -33,7 +33,7 @@ export default function ChatHeader({ room }: Props) {
       {/* Left: room info */}
       <div className="flex items-center gap-3">
         {room.type === 'DIRECT' ? (
-          <Avatar user={otherUser} size="md" showStatus />
+          <Avatar user={otherUser ?? undefined} size="md" showStatus />
         ) : (
           <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-purple-600 rounded-full flex items-center justify-center">
             <Users className="w-5 h-5 text-white" />
