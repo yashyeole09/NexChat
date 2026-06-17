@@ -1,4 +1,4 @@
-import { Users, Phone, Video, Search, MoreVertical, Hash, Bot } from 'lucide-react';
+import { Users, Phone, Video, Search, MoreVertical } from 'lucide-react';
 import type { ChatRoom } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import Avatar from '../ui/Avatar';
@@ -12,8 +12,8 @@ export default function ChatHeader({ room }: Props) {
 
   const otherUser =
     room.type === 'DIRECT'
-      ? room.members?.find((m) => m.id !== user?.id)
-      : null;
+      ? room.members?.find((m) => m.id !== user?.id) ?? undefined
+      : undefined;
 
   const statusLabel = otherUser
     ? { ONLINE: 'Online', AWAY: 'Away', BUSY: 'Busy', OFFLINE: 'Offline' }[otherUser.status]
