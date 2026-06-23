@@ -10,7 +10,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @RestController
@@ -60,13 +59,29 @@ public class UserController {
     }
 
     @PostMapping("/ai/ask")
-    public ResponseEntity<CompletableFuture<String>> askAi(@RequestBody Map<String,String> body) {
-        return ResponseEntity.ok(aiService.generateAiResponse(body.get("message"), body.get("context")));
+    public ResponseEntity<String> askAi(@RequestBody Map<String,String> body) {
+        try {
+            String result = aiService.generateAiResponse(
+                body.get("message"),
+                body.getOrDefault("context", "")
+            ).get();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.ok("AI service temporarily unavailable.");
+        }
     }
 
     @PostMapping("/ai/suggest-reply")
-    public ResponseEntity<CompletableFuture<String>> suggestReply(@RequestBody Map<String,String> body) {
-        return ResponseEntity.ok(aiService.suggestReply(body.get("message"), body.get("context")));
+    public ResponseEntity<String> suggestReply(@RequestBody Map<String,String> body) {
+        try {
+            String result = aiService.suggestReply(
+                body.get("message"),
+                body.getOrDefault("context", "")
+            ).get();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.ok("AI service temporarily unavailable.");
+        }
     }
 
     private UserResponse toUserResponse(User user) {

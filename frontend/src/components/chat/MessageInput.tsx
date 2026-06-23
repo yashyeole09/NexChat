@@ -23,24 +23,20 @@ export default function MessageInput({ roomId }: Props) {
       const msg = await chatApi.sendMessage({ content: text, roomId });
       addMessage(msg);
 
-      // Handle AI via direct REST call
+      // Handle AI via REST API
       if (text.startsWith('@ai ') || text.startsWith('@nexbot ')) {
         const query = text.substring(text.indexOf(' ') + 1);
         try {
-          const res = await api.post('/users/ai/ask', {
+          const res = await api.post<string>('/users/ai/ask', {
             message: query,
             context: ''
           });
-          // Handle different response formats
-          let aiText = '';
-          const data = res.data as any;
-          if (typeof data === 'string') {
-            aiText = data;
-          } else if (data && typeof data === 'object') {
-            aiText = data.result || data.value || data.text || JSON.stringify(data);
-          }
+          // Backend now returns plain string
+          const aiText = typeof res.data === 'string'
+            ? res.data
+            : String(res.data);
 
-          if (aiText) {
+          if (aiText && aiText !== 'undefined') {
             const aiMsg = await chatApi.sendMessage({
               content: '🤖 ' + aiText,
               roomId
