@@ -1,36 +1,56 @@
-import { useState, useRef, useCallback } from 'react';
-import { Send, Paperclip, Smile, Bot, Mic } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Send, Paperclip, Smile, Bot } from 'lucide-react';
 import { chatApi } from '../../api/chat';
 import { useChatStore } from '../../store/chatStore';
-import { useWebSocket } from '../../hooks/useWebSocket';
+import api from '../../api/client';
 import toast from 'react-hot-toast';
 
-interface Props {
-  roomId: string;
-}
+interface Props { roomId: string; }
 
 export default function MessageInput({ roomId }: Props) {
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
   const { addMessage } = useChatStore();
-  const { sendTyping } = useWebSocket();
-  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  const handleTyping = useCallback(() => {
-    sendTyping(roomId, true);
-    if (typingTimeout.current) clearTimeout(typingTimeout.current);
-    typingTimeout.current = setTimeout(() => sendTyping(roomId, false), 1500);
-  }, [roomId, sendTyping]);
 
   const handleSend = async () => {
     const text = content.trim();
     if (!text || sending) return;
     setSending(true);
     setContent('');
+
     try {
       const msg = await chatApi.sendMessage({ content: text, roomId });
       addMessage(msg);
+
+      // Handle AI via direct REST call
+      if (text.startsWith('@ai ') || text.startsWith('@nexbot ')) {
+        const query = text.substring(text.indexOf(' ') + 1);
+        try {
+          const res = await api.post('/users/ai/ask', {
+            message: query,
+            context: ''
+          });
+          // Handle different response formats
+          let aiText = '';
+          const data = res.data as any;
+          if (typeof data === 'string') {
+            aiText = data;
+          } else if (data && typeof data === 'object') {
+            aiText = data.result || data.value || data.text || JSON.stringify(data);
+          }
+
+          if (aiText) {
+            const aiMsg = await chatApi.sendMessage({
+              content: '🤖 ' + aiText,
+              roomId
+            });
+            addMessage(aiMsg);
+          }
+        } catch {
+          toast.error('AI is unavailable right now');
+        }
+      }
     } catch {
       toast.error('Failed to send message');
       setContent(text);
@@ -49,8 +69,6 @@ export default function MessageInput({ roomId }: Props) {
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
-    handleTyping();
-    // Auto-resize
     const el = e.target;
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
@@ -59,25 +77,23 @@ export default function MessageInput({ roomId }: Props) {
   const isAiMessage = content.startsWith('@ai ') || content.startsWith('@nexbot ');
 
   return (
-    <div className="px-4 pb-4 pt-2">
+    <div className="px-2 sm:px-4 pb-4 pt-2">
       {isAiMessage && (
         <div className="flex items-center gap-1.5 mb-2 px-1">
           <Bot className="w-3.5 h-3.5 text-brand-400" />
-          <span className="text-xs text-brand-400">NexBot AI will respond to this</span>
+          <span className="text-xs text-brand-400">NexBot AI will respond</span>
         </div>
       )}
-
       <div className={`flex items-end gap-2 bg-dark-200 rounded-2xl border transition-colors ${
-        isAiMessage ? 'border-brand-500/40' : 'border-white/5 focus-within:border-white/15'
+        isAiMessage
+          ? 'border-brand-500/40'
+          : 'border-white/5 focus-within:border-white/15'
       }`}>
-        {/* Left actions */}
         <div className="flex items-center pl-3 pb-3">
           <button className="btn-ghost p-1.5 rounded-lg text-slate-500 hover:text-slate-300">
             <Paperclip className="w-4 h-4" />
           </button>
         </div>
-
-        {/* Textarea */}
         <textarea
           ref={inputRef}
           value={content}
@@ -89,10 +105,8 @@ export default function MessageInput({ roomId }: Props) {
                      resize-none focus:outline-none py-3 leading-relaxed max-h-32"
           style={{ height: '44px' }}
         />
-
-        {/* Right actions */}
         <div className="flex items-center gap-1 pr-2 pb-2.5">
-          <button className="btn-ghost p-1.5 rounded-lg text-slate-500 hover:text-slate-300">
+          <button className="btn-ghost p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hidden sm:flex">
             <Smile className="w-4 h-4" />
           </button>
           <button
@@ -108,8 +122,7 @@ export default function MessageInput({ roomId }: Props) {
           </button>
         </div>
       </div>
-
-      <p className="text-center text-xs text-slate-700 mt-2">
+      <p className="text-center text-xs text-slate-700 mt-2 hidden sm:block">
         Enter to send · Shift+Enter for new line · @ai for AI assistant
       </p>
     </div>

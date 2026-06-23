@@ -1,13 +1,14 @@
-import { Users, Phone, Video, Search, MoreVertical } from 'lucide-react';
+import { Users, Phone, Video, Search, MoreVertical, ArrowLeft } from 'lucide-react';
 import type { ChatRoom } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import Avatar from '../ui/Avatar';
 
 interface Props {
   room: ChatRoom;
+  onBack?: () => void;
 }
 
-export default function ChatHeader({ room }: Props) {
+export default function ChatHeader({ room, onBack }: Props) {
   const { user } = useAuthStore();
 
   const otherUser =
@@ -29,8 +30,18 @@ export default function ChatHeader({ room }: Props) {
     : 'text-slate-500';
 
   return (
-    <div className="h-16 px-4 flex items-center justify-between border-b border-white/5 bg-dark-300/60 backdrop-blur-sm">
-      <div className="flex items-center gap-3">
+    <div className="h-16 px-3 sm:px-4 flex items-center justify-between border-b border-white/5 bg-dark-300/60 backdrop-blur-sm">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Back button - only on mobile */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="md:hidden btn-ghost p-2 rounded-xl mr-1"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        )}
+
         {room.type === 'DIRECT' ? (
           <Avatar user={otherUser} size="md" showStatus />
         ) : (
@@ -43,13 +54,21 @@ export default function ChatHeader({ room }: Props) {
           <p className={`text-xs ${statusColor}`}>{statusLabel}</p>
         </div>
       </div>
-      <div className="flex items-center gap-1">
-        <button className="btn-ghost p-2 rounded-xl"><Phone className="w-4 h-4" /></button>
-        <button className="btn-ghost p-2 rounded-xl"><Video className="w-4 h-4" /></button>
-        <button className="btn-ghost p-2 rounded-xl"><Search className="w-4 h-4" /></button>
-        <button className="btn-ghost p-2 rounded-xl"><MoreVertical className="w-4 h-4" /></button>
+
+      <div className="flex items-center gap-0.5 sm:gap-1">
+        <button className="btn-ghost p-2 rounded-xl hidden sm:flex">
+          <Phone className="w-4 h-4" />
+        </button>
+        <button className="btn-ghost p-2 rounded-xl hidden sm:flex">
+          <Video className="w-4 h-4" />
+        </button>
+        <button className="btn-ghost p-2 rounded-xl">
+          <Search className="w-4 h-4" />
+        </button>
+        <button className="btn-ghost p-2 rounded-xl">
+          <MoreVertical className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
 }
-

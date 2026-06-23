@@ -8,9 +8,12 @@ import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
 import { Loader2 } from 'lucide-react';
 
-interface Props { roomId: string; }
+interface Props {
+  roomId: string;
+  onBack?: () => void;
+}
 
-export default function ChatWindow({ roomId }: Props) {
+export default function ChatWindow({ roomId, onBack }: Props) {
   const { fetchMessages } = useChatStore();
   const [room, setRoom] = useState<ChatRoom | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +38,7 @@ export default function ChatWindow({ roomId }: Props) {
 
   return (
     <div className="h-full flex flex-col bg-dark-400">
-      <ChatHeader room={room} />
+      <ChatHeader room={room} onBack={onBack} />
       <MessageList roomId={roomId} />
       <TypingIndicator roomId={roomId} />
       <MessageInput roomId={roomId} />
