@@ -14,14 +14,15 @@ import java.util.concurrent.CompletableFuture;
 public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
-    @Value("${ai.gemini.api-key}") private String apiKey;
-    @Value("${ai.gemini.base-url}") private String baseUrl;
+    @Value("${ai.openrouter.api-key}") private String apiKey;
 
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
         .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .build();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final String API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
     @Async
     public CompletableFuture<String> generateAiResponse(String userMessage, String context) {
@@ -32,49 +33,44 @@ public class AiService {
 
             String requestBody = objectMapper.writeValueAsString(
                 objectMapper.createObjectNode()
-                    .set("contents", objectMapper.createArrayNode()
+                    .put("model", "meta-llama/llama-3.2-3b-instruct:free")
+                    .set("messages", objectMapper.createArrayNode()
                         .add(objectMapper.createObjectNode()
-                            .set("parts", objectMapper.createArrayNode()
-                                .add(objectMapper.createObjectNode()
-                                    .put("text", prompt))))));
-
-            String url = baseUrl + "?key=" + apiKey;
-            log.info("Calling Gemini API at: {}", baseUrl);
+                            .put("role", "system")
+                            .put("content", "You are NexBot, a helpful AI assistant in NexChat. Be concise and friendly."))
+                        .add(objectMapper.createObjectNode()
+                            .put("role", "user")
+                            .put("content", prompt))));
 
             Request request = new Request.Builder()
-                .url(url)
+                .url(API_URL)
                 .post(RequestBody.create(requestBody, MediaType.parse("application/json")))
+                .addHeader("Authorization", "Bearer " + apiKey)
+                .addHeader("HTTP-Referer", "https://nex-chat-chi.vercel.app")
+                .addHeader("X-Title", "NexChat")
                 .build();
+
+            log.info("Calling OpenRouter AI...");
 
             try (Response response = httpClient.newCall(request).execute()) {
                 String responseBody = response.body() != null ? response.body().string() : "";
-                log.info("Gemini API response code: {}", response.code());
+                log.info("OpenRouter response code: {}", response.code());
 
                 if (!response.isSuccessful()) {
-                    log.error("Gemini API error: {} - {}", response.code(), responseBody);
-                    return CompletableFuture.completedFuture(
-                        "AI service error " + response.code() + ". Please check API key."
-                    );
+                    log.error("OpenRouter error: {} - {}", response.code(), responseBody);
+                    return CompletableFuture.completedFuture("AI service error. Please try again.");
                 }
 
                 JsonNode root = objectMapper.readTree(responseBody);
-
-                // Check for API error in response
-                if (root.has("error")) {
-                    String errorMsg = root.path("error").path("message").asText("Unknown error");
-                    log.error("Gemini API returned error: {}", errorMsg);
-                    return CompletableFuture.completedFuture("AI error: " + errorMsg);
-                }
-
-                String text = root.path("candidates").path(0)
-                    .path("content").path("parts").path(0)
-                    .path("text").asText("");
+                String text = root.path("choices").path(0)
+                    .path("message").path("content").asText("");
 
                 if (text.isEmpty()) {
-                    log.warn("Empty response from Gemini: {}", responseBody);
+                    log.warn("Empty AI response: {}", responseBody);
                     return CompletableFuture.completedFuture("No response generated.");
                 }
 
+                log.info("AI response received successfully");
                 return CompletableFuture.completedFuture(text);
             }
         } catch (Exception e) {
