@@ -33,7 +33,7 @@ public class AiService {
 
             String requestBody = objectMapper.writeValueAsString(
                 objectMapper.createObjectNode()
-                    .put("model", "google/gemma-3-4b-it:free")
+                    .put("model", "deepseek/deepseek-r1-0528:free")
                     .set("messages", objectMapper.createArrayNode()
                         .add(objectMapper.createObjectNode()
                             .put("role", "system")
