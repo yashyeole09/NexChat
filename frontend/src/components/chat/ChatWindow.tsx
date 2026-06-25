@@ -37,7 +37,7 @@ export default function ChatWindow({ roomId, onBack }: Props) {
   if (!room) return null;
 
   return (
-    <div className="h-full flex flex-col bg-dark-400">
+ <div className="h-full flex flex-col chat-bg">
       <ChatHeader room={room} onBack={onBack} />
       <MessageList roomId={roomId} />
       <TypingIndicator roomId={roomId} />

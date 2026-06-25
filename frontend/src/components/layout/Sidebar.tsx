@@ -34,7 +34,7 @@ export default function Sidebar({ onRoomSelect }: SidebarProps) {
 
   return (
     <>
-      <div className="w-72 h-full flex flex-col bg-dark-300 border-r border-white/5">
+      <div className="w-72 h-full flex flex-col sidebar-bg">
         {/* Header */}
         <div className="p-4 border-b border-white/5">
           <div className="flex items-center justify-between mb-4">
