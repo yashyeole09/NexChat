@@ -33,12 +33,12 @@ public class AiService {
 
             String requestBody = objectMapper.writeValueAsString(
                 objectMapper.createObjectNode()
-                    .put("model", "llama3-8b-8192")
+                    .put("model", "llama-3.1-8b-instant")
                     .set("messages", objectMapper.createArrayNode()
                         .add(objectMapper.createObjectNode()
                             .put("role", "system")
                             .put("content", "You are NexBot, a helpful AI assistant in NexChat. Be concise and friendly."))
-                        .add(objectMapper.createObjectNode()
+                        .add(objectMapper.createObjectNode())
                             .put("role", "user")
                             .put("content", prompt))));
 
