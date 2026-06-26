@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-public class AiService {
+public class AiService {    
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
     @Value("${ai.groq.api-key}") private String apiKey;
@@ -32,15 +32,15 @@ public class AiService {
                 : userMessage;
 
             String requestBody = objectMapper.writeValueAsString(
-                objectMapper.createObjectNode()
-                    .put("model", "llama-3.1-8b-instant")
-                    .set("messages", objectMapper.createArrayNode()
-                        .add(objectMapper.createObjectNode()
-                            .put("role", "system")
-                            .put("content", "You are NexBot, a helpful AI assistant in NexChat. Be concise and friendly."))
-                        .add(objectMapper.createObjectNode())
-                            .put("role", "user")
-                            .put("content", prompt))));
+    objectMapper.createObjectNode()
+        .put("model", "llama-3.1-8b-instant")
+        .set("messages", objectMapper.createArrayNode()
+            .add(objectMapper.createObjectNode()
+                .put("role", "system")
+                .put("content", "You are NexBot, a helpful AI assistant in NexChat. Be concise and friendly."))
+            .add(objectMapper.createObjectNode()
+                .put("role", "user")
+                .put("content", prompt))));
 
             Request request = new Request.Builder()
                 .url(API_URL)
