@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
-    @Value("${ai.openrouter.api-key}") private String apiKey;
+    @Value("${ai.groq.api-key}") private String apiKey;
 
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
         .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
@@ -22,7 +22,7 @@ public class AiService {
         .build();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String API_URL = "https://openrouter.ai/api/v1/chat/completions";
+    private static final String API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     @Async
     public CompletableFuture<String> generateAiResponse(String userMessage, String context) {
@@ -33,7 +33,7 @@ public class AiService {
 
             String requestBody = objectMapper.writeValueAsString(
                 objectMapper.createObjectNode()
-                    .put("model", "meta-llama/llama-3.3-70b-instruct:free")
+                    .put("model", "llama3-8b-8192")
                     .set("messages", objectMapper.createArrayNode()
                         .add(objectMapper.createObjectNode()
                             .put("role", "system")
@@ -46,18 +46,17 @@ public class AiService {
                 .url(API_URL)
                 .post(RequestBody.create(requestBody, MediaType.parse("application/json")))
                 .addHeader("Authorization", "Bearer " + apiKey)
-                .addHeader("HTTP-Referer", "https://nex-chat-chi.vercel.app")
-                .addHeader("X-Title", "NexChat")
+                .addHeader("Content-Type", "application/json")
                 .build();
 
-            log.info("Calling OpenRouter AI...");
+            log.info("Calling Groq AI...");
 
             try (Response response = httpClient.newCall(request).execute()) {
                 String responseBody = response.body() != null ? response.body().string() : "";
-                log.info("OpenRouter response code: {}", response.code());
+                log.info("Groq response code: {}", response.code());
 
                 if (!response.isSuccessful()) {
-                    log.error("OpenRouter error: {} - {}", response.code(), responseBody);
+                    log.error("Groq error: {} - {}", response.code(), responseBody);
                     return CompletableFuture.completedFuture("AI service error. Please try again.");
                 }
 
@@ -66,11 +65,11 @@ public class AiService {
                     .path("message").path("content").asText("");
 
                 if (text.isEmpty()) {
-                    log.warn("Empty AI response: {}", responseBody);
+                    log.warn("Empty Groq response: {}", responseBody);
                     return CompletableFuture.completedFuture("No response generated.");
                 }
 
-                log.info("AI response received successfully");
+                log.info("Groq AI response received successfully");
                 return CompletableFuture.completedFuture(text);
             }
         } catch (Exception e) {
