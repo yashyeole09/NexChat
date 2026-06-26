@@ -33,7 +33,7 @@ public class AiService {
 
             String requestBody = objectMapper.writeValueAsString(
                 objectMapper.createObjectNode()
-                    .put("model", "qwen/qwen3-8b:free")
+                    .put("model", "meta-llama/llama-3.3-70b-instruct:free")
                     .set("messages", objectMapper.createArrayNode()
                         .add(objectMapper.createObjectNode()
                             .put("role", "system")
