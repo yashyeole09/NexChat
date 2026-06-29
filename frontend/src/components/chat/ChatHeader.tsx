@@ -11,63 +11,55 @@ interface Props {
 export default function ChatHeader({ room, onBack }: Props) {
   const { user } = useAuthStore();
 
-  const otherUser =
-    room.type === 'DIRECT'
-      ? room.members?.find((m) => m.id !== user?.id) ?? undefined
-      : undefined;
+  const otherUser = room.type === 'DIRECT'
+    ? room.members?.find(m => m.id !== user?.id) ?? undefined
+    : undefined;
 
   const statusLabel = otherUser
     ? { ONLINE: 'Online', AWAY: 'Away', BUSY: 'Busy', OFFLINE: 'Offline' }[otherUser.status]
     : `${room.members?.length ?? 0} members`;
 
   const statusColor = otherUser
-    ? {
-        ONLINE: 'text-emerald-400',
-        AWAY: 'text-amber-400',
-        BUSY: 'text-rose-400',
-        OFFLINE: 'text-slate-500',
-      }[otherUser.status]
-    : 'text-slate-500';
+    ? { ONLINE: '#22c55e', AWAY: '#f59e0b', BUSY: '#ef4444', OFFLINE: '#475569' }[otherUser.status]
+    : '#475569';
 
   return (
-    <div className="h-16 px-3 sm:px-4 flex items-center justify-between border-b border-white/5 bg-dark-300/60 backdrop-blur-sm">
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Back button - only on mobile */}
+    <div className="flex items-center justify-between px-4 h-14 flex-shrink-0"
+      style={{
+        background: 'rgba(10,10,16,0.95)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(10px)'
+      }}>
+
+      {/* Left */}
+      <div className="flex items-center gap-3">
         {onBack && (
-          <button
-            onClick={onBack}
-            className="md:hidden btn-ghost p-2 rounded-xl mr-1"
-          >
+          <button onClick={onBack} className="btn-ghost md:hidden -ml-1">
             <ArrowLeft className="w-5 h-5" />
           </button>
         )}
 
         {room.type === 'DIRECT' ? (
-          <Avatar user={otherUser} size="md" showStatus />
+          <Avatar user={otherUser} size="sm" showStatus />
         ) : (
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-purple-600 rounded-full flex items-center justify-center">
-            <Users className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
+            style={{background: 'linear-gradient(135deg, #6366f1, #8b5cf6)'}}>
+            {room.name.slice(0,1).toUpperCase()}
           </div>
         )}
+
         <div>
           <h2 className="font-semibold text-slate-100 text-sm leading-tight">{room.name}</h2>
-          <p className={`text-xs ${statusColor}`}>{statusLabel}</p>
+          <p className="text-xs leading-tight" style={{color: statusColor}}>{statusLabel}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-0.5 sm:gap-1">
-        <button className="btn-ghost p-2 rounded-xl hidden sm:flex">
-          <Phone className="w-4 h-4" />
-        </button>
-        <button className="btn-ghost p-2 rounded-xl hidden sm:flex">
-          <Video className="w-4 h-4" />
-        </button>
-        <button className="btn-ghost p-2 rounded-xl">
-          <Search className="w-4 h-4" />
-        </button>
-        <button className="btn-ghost p-2 rounded-xl">
-          <MoreVertical className="w-4 h-4" />
-        </button>
+      {/* Right */}
+      <div className="flex items-center gap-0.5">
+        <button className="btn-ghost hidden sm:flex"><Phone className="w-4 h-4" /></button>
+        <button className="btn-ghost hidden sm:flex"><Video className="w-4 h-4" /></button>
+        <button className="btn-ghost"><Search className="w-4 h-4" /></button>
+        <button className="btn-ghost"><MoreVertical className="w-4 h-4" /></button>
       </div>
     </div>
   );
