@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
-import { Send, Paperclip, Smile, Bot } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Send, Bot } from 'lucide-react';
 import { chatApi } from '../../api/chat';
 import { useChatStore } from '../../store/chatStore';
 import api from '../../api/client';
@@ -51,47 +51,35 @@ export default function MessageInput({ roomId }: Props) {
     setContent(e.target.value);
     const el = e.target;
     el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   };
 
   const isAI = content.startsWith('@ai ') || content.startsWith('@nexbot ');
 
   return (
-    <div className="px-3 pb-4 pt-1" style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
+    <div className="px-2 sm:px-3 pb-3 sm:pb-4 pt-1" style={{borderTop:'1px solid rgba(255,255,255,0.03)'}}>
       {isAI && (
         <div className="flex items-center gap-1.5 mb-2 px-1">
-          <Bot className="w-3 h-3 text-indigo-400" />
-          <span className="text-xs text-indigo-400">NexBot AI will respond</span>
+          <Bot className="w-3 h-3" style={{color:'#a78bfa'}} />
+          <span className="text-xs" style={{color:'#a78bfa'}}>NexBot will respond</span>
         </div>
       )}
 
-      <div className={`input-bar flex items-end gap-2 px-3 py-2 ${isAI ? 'border-indigo-500/30' : ''}`}>
+      <div className={`input-bar flex items-end gap-2 px-3 py-2`}>
         <textarea
           ref={inputRef}
           value={content}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="Message... or @ai to ask NexBot"
+          placeholder="Message... or @ai to ask"
           rows={1}
-          className="flex-1 bg-transparent text-slate-100 placeholder-slate-600 text-sm
-                     resize-none focus:outline-none py-1.5 leading-relaxed"
-          style={{ maxHeight: '120px', minHeight: '36px' }}
+          className="flex-1 bg-transparent text-slate-100 placeholder-slate-600 text-sm resize-none focus:outline-none py-1.5 leading-relaxed min-w-0"
+          style={{ maxHeight: '100px', minHeight: '34px' }}
         />
-        <div className="flex items-center gap-1.5 pb-1">
-          <button
-            onClick={handleSend}
-            disabled={!content.trim() || sending}
-            className="send-btn"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <button onClick={handleSend} disabled={!content.trim() || sending} className="send-btn">
+          <Send className="w-3.5 h-3.5" />
+        </button>
       </div>
-
-      <p className="text-center mt-1.5 hidden sm:block"
-        style={{fontSize:'0.6rem', color:'#1f2937'}}>
-        Enter to send · Shift+Enter for new line · @ai for AI
-      </p>
     </div>
   );
 }
